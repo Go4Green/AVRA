@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	
+	  <title>Χάρτης ρύπων</title>
+
+	  <meta charset="utf-8" />
+	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	  <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+     <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+   
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin="" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css" /> -->
+ 
+
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.1/leaflet.css" rel="stylesheet" />
+
+      <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+	  <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+     
+	 
+	 <!-- add the code functions scripts-->
+	   
+      <script src="infolegend.js"></script>
+	  <script src="editfunctions.js"></script>
+	  <script src="getdata.js"></script>
+	  <script src="loaddata.js"></script>
+	  <script src="pollutant.js"></script>
+	  <script src="buttons.js"></script>
+	 
+	 
+	 <!-- add the css stylesheet-->
+	  <link rel="stylesheet" href="mapstyle.css">
+ 
+	
+</head>
+<body>
+<div id='map' style='width:50%;height:50%;'></div>
+
+        
+  
+
+<script>
+//window.L_DISABLE_3D = true;
+   window.L_DISABLE_3D = true
+	var map = L.map('map').setView([37.98, 23.72], 11);
+    //var current_markers;
+	/*L.tileLayer('https://api.tiles.mapbox.com/v4/{mapbox.light}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw, {
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+	}).addTo(map);*/
+	/*L.tileLayer('http://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+	}).addTo(map);
+	var layerGroup = L.layerGroup().addTo(map);
+*/
+
+    // openstreet map is used as background
+	L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png   ',{
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+	}).addTo(map);
+	var layerGroup = L.layerGroup().addTo(map);
+    
+	
+	
+	//define popup  icon
+	var LeafIcon = L.Icon.extend({
+		options: {
+		
+			iconSize: [30, 28]
+			
+		}
+	});
+    // define the infolegend on the bottomleft corner of the map as a global variable
+	var infolegend = L.control({position: 'bottomleft'});
+	// define datetime as a global variable
+	var datetime;
+	/// add the dropdown menu on the topright corner of the map
+	var legend = L.control({position: 'topright'});
+    legend.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'info legend');
+	var tempstring='<div class=cont">'+
+	                '<h1 id="PolHeader">Επιλογή ρύπου</h1>'+
+	                  '<select id="Pollutants" name="Pollutants" onchange="loaddata()">'+
+					  '<option>Όλοι οι ρύποι</option><option>SO<sub>2</sub></option><option>NO<sub>2</sub></option><option>CO</option><option>O3</option><option>PM25</option><option>PM10</option>'+
+					  '</select>'+
+					 ' </div>';
+					  
+    div.innerHTML += tempstring;
+    div.click = L.DomEvent.stopPropagation;
+    return div;
+	};
+	legend.addTo(map);
+	// add the datetime slider below the dropdown menu
+	   var slider = L.control({position: 'topright'});
+       slider.onAdd = function (map) {
+       var div = L.DomUtil.create('div', 'info legend');
+	   var tempstring='<h id="date">Ημερομηνία</h>'+
+	                   '<div class="slidecontainer"><input type="range" min="-240" max="0" value="0" class="slider" id="myRange"></div>'+
+					   '<div class="botonera">'+
+					'<button type="button" class="toolButton" id="PrevButton" title="Προηγούμενη τιμή" value=" " onclick="PrevButtonClick()" style="">«'+
+					
+					'<button type="button" class="toolButton" id="NextButton" title="Επόμενη τιμή" value=" " onclick="NextButtonClick()">»'+
+					'</button>'+
+				'</div>';
+       div.innerHTML +=tempstring;
+       div.firstChild.onmousedown = div.firstChild.ondblclick = L.DomEvent.stopPropagation;
+	
+       return div;
+	    };
+	   slider.addTo(map);
+	     //disable map dragging when user's cursor enters the slider's container
+        slider.getContainer().addEventListener('mouseover', function () {
+         map.dragging.disable();
+		 map.doubleClickZoom.disable(); 
+         }); 
+
+         // Re-enable dragging when user's cursor leaves the element
+        slider.getContainer().addEventListener('mouseout', function () {
+        map.dragging.enable();
+		map.doubleClickZoom.enable(); 
+        });
+		// reload data when slider value changes 	 
+        slider.getContainer().addEventListener('click', function () {
+         loaddata();})
+
+
+
+//initial loading of data
+loaddata();
+
+</script>
+</body>
+</html>
